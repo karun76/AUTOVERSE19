@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -692,6 +692,19 @@ export const Studio3D: React.FC<Studio3DProps> = ({
     }
   };
 
+  const carsByBrand = useMemo(() => {
+    const groups = new Map<string, CarSpec[]>();
+    for (const car of cars) {
+      const arr = groups.get(car.brand);
+      if (arr) {
+        arr.push(car);
+      } else {
+        groups.set(car.brand, [car]);
+      }
+    }
+    return Array.from(groups.entries());
+  }, [cars]);
+
   return (
     <section id="studio" className="py-14 border-t border-white/8">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -716,10 +729,14 @@ export const Studio3D: React.FC<Studio3DProps> = ({
               aria-label="Select vehicle for 3D Studio"
               className="h-10 px-3.5 bg-[#12161f] border border-white/12 rounded-lg text-sm text-white focus:outline-none focus:border-[#d6b45d] cursor-pointer"
             >
-              {cars.map((car) => (
-                <option key={car.id} value={car.id}>
-                  {car.brand} {car.model}
-                </option>
+              {carsByBrand.map(([brand, brandCars]) => (
+                <optgroup key={brand} label={`${brand} (${brandCars.length})`}>
+                  {brandCars.map((car) => (
+                    <option key={car.id} value={car.id}>
+                      {car.brand} {car.model}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
 

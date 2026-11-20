@@ -343,7 +343,7 @@ export default function App() {
                   Discover Your Dream Machine.
                 </h1>
                 <p className="text-base text-[#b5bbc8] leading-relaxed max-w-xl mt-5">
-                  Explore 49 iconic production cars, hypercars, and electric flagships across 22 global marques. Compare performance metrics side by side and configure paint, stance, and wheel finishes in real-time 3D.
+                  Explore {cars.length.toLocaleString()} iconic production cars, hypercars, and electric flagships across {BRANDS.length - 1} global marques. Compare performance metrics side by side and configure paint, stance, and wheel finishes in real-time 3D.
                 </p>
                 <div className="flex flex-wrap items-center gap-3.5 mt-7">
                   <button
@@ -417,7 +417,7 @@ export default function App() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-10 pt-8 border-t border-white/8">
               <div>
                 <div className="text-2xl font-semibold text-white font-mono-tabular">
-                  {cars.length}
+                  {cars.length.toLocaleString()}
                 </div>
                 <div className="text-xs text-[#a7adba] mt-0.5">
                   Cataloged Vehicles

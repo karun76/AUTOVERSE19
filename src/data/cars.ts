@@ -1,3 +1,7 @@
+import { expandTuples } from './catalogShared.ts';
+import { CATALOG_PART_A } from './catalogPartA.ts';
+import { CATALOG_PART_B } from './catalogPartB.ts';
+
 export type BodyArchetype =
   | 'hypercar'
   | 'supercar'
@@ -26,7 +30,7 @@ export interface CarSpec {
   description: string;
 }
 
-const rawCars: Omit<CarSpec, 'id' | 'archetype' | 'defaultColor'>[] = [
+const baseCars: Omit<CarSpec, 'id' | 'archetype' | 'defaultColor'>[] = [
   { brand: 'BMW', model: 'M3 Competition', year: 2025, type: 'Sports Car', hp: 523, torque: 650, top: 250, acc: '3.5 s', engine: '3.0L Twin-Turbo Inline-6', fuel: 'Petrol', price: 'Approx. $80,000', image: '/src/assets/images/diag_bmw_m3_comp_1795015697466.jpg', description: 'A powerful performance sedan with sporty handling and everyday practicality.' },
   { brand: 'BMW', model: 'M4 Competition', year: 2025, type: 'Sports Car', hp: 523, torque: 650, top: 250, acc: '3.4 s', engine: '3.0L Twin-Turbo Inline-6', fuel: 'Petrol', price: 'Approx. $80,000', image: '/src/assets/images/diag_bmw_m4_comp_1795015698704.jpg', description: 'A performance coupe built for speed, precision and driver excitement.' },
   { brand: 'BMW', model: 'M5', year: 2025, type: 'Sedan', hp: 717, torque: 1000, top: 305, acc: '3.5 s', engine: '4.4L V8 Hybrid', fuel: 'Hybrid', price: 'Approx. $120,000', image: '/src/assets/images/diag_bmw_m5_1795015699021.jpg', description: 'A high-performance executive sedan combining power and luxury.' },
@@ -76,6 +80,12 @@ const rawCars: Omit<CarSpec, 'id' | 'archetype' | 'defaultColor'>[] = [
   { brand: 'BYD', model: 'Seal', year: 2025, type: 'Electric', hp: 523, torque: 670, top: 200, acc: '3.8 s', engine: 'Dual Electric Motors', fuel: 'Electric', price: 'Varies by market', image: '/src/assets/images/diag_byd_seal_1795015801747.jpg', description: 'An electric sedan offering technology and performance.' },
   { brand: 'Mahindra', model: 'Thar', year: 2025, type: 'SUV', hp: 150, torque: 320, top: 155, acc: 'Varies', engine: 'Turbo Engine', fuel: 'Petrol/Diesel', price: 'Varies by market', image: '/src/assets/images/diag_mahindra_thar_1795015800090.jpg', description: 'A popular adventure-oriented off-road SUV.' },
   { brand: 'Tata', model: 'Harrier', year: 2025, type: 'SUV', hp: 170, torque: 350, top: 195, acc: 'Varies', engine: 'Diesel Engine', fuel: 'Diesel', price: 'Varies by market', image: '/src/assets/images/diag_tata_harrier_1795015800473.jpg', description: 'A premium Indian SUV with modern features.' },
+];
+
+const rawCars: Omit<CarSpec, 'id' | 'archetype' | 'defaultColor'>[] = [
+  ...baseCars,
+  ...expandTuples(CATALOG_PART_A),
+  ...expandTuples(CATALOG_PART_B),
 ];
 
 const brandColorPalette: Record<string, string> = {

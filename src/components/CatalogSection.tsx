@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Search, Box, ArrowUpDown, Check, Plus, Bookmark } from 'lucide-react';
 import { BRANDS, CATEGORY_OPTIONS, type CarSpec } from '../data/cars';
 import { CarImage } from './CarImage';
@@ -88,6 +88,25 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
     sortBy,
   ]);
 
+  const PAGE_SIZE = 24;
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [
+    selectedBrand,
+    selectedCategory,
+    selectedFuel,
+    searchQuery,
+    sortBy,
+    showGarageOnly,
+  ]);
+
+  const visibleCars = useMemo(
+    () => filteredCars.slice(0, visibleCount),
+    [filteredCars, visibleCount],
+  );
+
   return (
     <section id="catalog" className="py-14 border-t border-white/8">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -118,7 +137,11 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
               <span>Saved Garage ({favoriteIds.length})</span>
             </button>
             <p className="text-sm text-[#a7adba] font-mono-tabular">
-              Showing {filteredCars.length} of {cars.length} vehicles
+              Showing {visibleCars.length.toLocaleString()} of{' '}
+              {filteredCars.length.toLocaleString()} vehicles
+              {filteredCars.length !== cars.length
+                ? ` (${cars.length.toLocaleString()} total)`
+                : ''}
             </p>
           </div>
         </div>
@@ -244,8 +267,9 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCars.map((car) => {
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visibleCars.map((car) => {
               const isCompared = compareIds.includes(car.id);
               const isFavorite = favoriteIds.includes(car.id);
               return (
@@ -376,6 +400,29 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
               );
             })}
           </div>
+          {visibleCars.length < filteredCars.length && (
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setVisibleCount((prev) =>
+                    Math.min(prev + PAGE_SIZE, filteredCars.length),
+                  )
+                }
+                className="h-10 px-5 rounded-lg bg-[#d6b45d] text-[#090b10] text-xs font-semibold hover:bg-[#e2c26d] transition-colors cursor-pointer whitespace-nowrap"
+              >
+                Show {Math.min(PAGE_SIZE, filteredCars.length - visibleCars.length)} More
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisibleCount(filteredCars.length)}
+                className="h-10 px-5 rounded-lg bg-[#12161f] border border-white/12 text-[#d1d5df] hover:text-white hover:border-[#d6b45d]/60 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
+              >
+                Show All ({filteredCars.length.toLocaleString()})
+              </button>
+            </div>
+          )}
+        </>
         )}
       </div>
     </section>

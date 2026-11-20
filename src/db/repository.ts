@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq } from 'drizzle-orm';
 import { db } from './index.ts';
 import { cars, garageFavorites, studioBuilds, users } from './schema.ts';
 import { CARS } from '../data/cars.ts';
@@ -25,33 +25,36 @@ export interface CreateStudioBuildInput {
 
 export async function ensureCarsSeeded(): Promise<void> {
   try {
-    const existing = await db.select({ id: cars.id }).from(cars).limit(1);
-    if (existing.length > 0) return;
+    const [{ total }] = await db.select({ total: count() }).from(cars);
+    if (total >= CARS.length) return;
 
-    await db
-      .insert(cars)
-      .values(
-        CARS.map((car, idx) => ({
-          id: car.id,
-          brand: car.brand,
-          model: car.model,
-          year: car.year,
-          type: car.type,
-          archetype: car.archetype,
-          hp: car.hp,
-          torque: car.torque,
-          top: car.top,
-          acc: car.acc,
-          engine: car.engine,
-          fuel: car.fuel,
-          price: car.price,
-          defaultColor: car.defaultColor,
-          image: car.image,
-          description: car.description,
-          sortOrder: idx,
-        })),
-      )
-      .onConflictDoNothing();
+    const rows = CARS.map((car, idx) => ({
+      id: car.id,
+      brand: car.brand,
+      model: car.model,
+      year: car.year,
+      type: car.type,
+      archetype: car.archetype,
+      hp: car.hp,
+      torque: car.torque,
+      top: car.top,
+      acc: car.acc,
+      engine: car.engine,
+      fuel: car.fuel,
+      price: car.price,
+      defaultColor: car.defaultColor,
+      image: car.image,
+      description: car.description,
+      sortOrder: idx,
+    }));
+
+    const CHUNK_SIZE = 200;
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      await db
+        .insert(cars)
+        .values(rows.slice(i, i + CHUNK_SIZE))
+        .onConflictDoNothing();
+    }
   } catch (error) {
     console.error('Database seed failed:', error);
     throw new Error('Failed to initialize vehicle catalog.', { cause: error });
