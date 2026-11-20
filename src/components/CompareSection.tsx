@@ -8,7 +8,6 @@ interface CompareSectionProps {
   notice: string | null;
   onRemoveCar: (id: string) => void;
   onClearAll: () => void;
-  onOpenInStudio: (car: CarSpec) => void;
 }
 
 export const CompareSection: React.FC<CompareSectionProps> = ({
@@ -16,7 +15,6 @@ export const CompareSection: React.FC<CompareSectionProps> = ({
   notice,
   onRemoveCar,
   onClearAll,
-  onOpenInStudio,
 }) => {
   const maxHp = Math.max(...compareCars.map((c) => c.hp), 1);
   const maxTorque = Math.max(...compareCars.map((c) => c.torque), 1);
@@ -63,7 +61,7 @@ export const CompareSection: React.FC<CompareSectionProps> = ({
           {compareCars.length === 0 ? (
             <div className="p-10 text-center">
               <p className="text-sm text-[#a7adba]">
-                No vehicles selected yet. Choose up to 3 vehicles from the catalog above to compare horsepower, torque, top speed, and powertrain specifications.
+                No vehicles selected yet. Choose up to 3 vehicles from the Encyclopedia of Cars above to compare horsepower, torque, top speed, and powertrain specifications.
               </p>
             </div>
           ) : (
@@ -87,13 +85,6 @@ export const CompareSection: React.FC<CompareSectionProps> = ({
                             <div className="text-base font-semibold text-white mt-0.5">
                               {car.model}
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => onOpenInStudio(car)}
-                              className="text-xs text-[#a7adba] hover:text-[#d6b45d] underline underline-offset-4 mt-1.5 cursor-pointer"
-                            >
-                              Load in 3D Studio
-                            </button>
                           </div>
                           <button
                             type="button"

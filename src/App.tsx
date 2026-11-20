@@ -1,28 +1,31 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { ArrowRight, Box, LogIn, LogOut, X } from 'lucide-react';
+import { ArrowRight, GitCompareArrows, LogIn, LogOut, X } from 'lucide-react';
 import { BRANDS, CARS, type CarSpec } from './data/cars';
 import { CatalogSection } from './components/CatalogSection';
 import { CompareSection } from './components/CompareSection';
-import { Studio3D } from './components/Studio3D';
 import { CarDetailModal } from './components/CarDetailModal';
 import { CarImage } from './components/CarImage';
 import { EnquirySection } from './components/EnquirySection';
+import { SignInModal } from './components/SignInModal';
 import { useAuth } from './context/AuthContext';
 import {
-  createStudioBuild,
   deleteGarageFavorite,
   fetchCatalogCars,
   fetchGarageFavorites,
-  fetchStudioBuilds,
-  removeStudioBuild,
   saveGarageFavorite,
-  type SavedStudioBuild,
 } from './lib/api';
-import type { FinishType, WheelStyle } from './three/CarModelBuilder';
 
 export default function App() {
-  const { user, idToken, authError, clearAuthError, signIn, logout, getFreshToken } =
-    useAuth();
+  const {
+    user,
+    idToken,
+    signingIn,
+    authError,
+    clearAuthError,
+    signIn,
+    logout,
+    getFreshToken,
+  } = useAuth();
 
   const [cars, setCars] = useState<CarSpec[]>(CARS);
   const [selectedBrand, setSelectedBrand] = useState<string>('All');
@@ -33,16 +36,11 @@ export default function App() {
   const [showGarageOnly, setShowGarageOnly] = useState<boolean>(false);
 
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [savedBuilds, setSavedBuilds] = useState<SavedStudioBuild[]>([]);
-  const [savingBuild, setSavingBuild] = useState<boolean>(false);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [compareNotice, setCompareNotice] = useState<string | null>(null);
   const [detailCar, setDetailCar] = useState<CarSpec | null>(null);
-  const [studioCar, setStudioCar] = useState<CarSpec>(
-    () => CARS.find((c) => c.model === '911 GT3 RS') ?? CARS[0],
-  );
 
   // Load catalog from backend API (keeps instant initial render)
   useEffect(() => {
@@ -61,21 +59,19 @@ export default function App() {
     };
   }, []);
 
-  // Load user's saved garage & studio builds on sign-in
+  // Load user's saved garage on sign-in
   useEffect(() => {
     if (!user || !idToken) {
       setFavoriteIds([]);
-      setSavedBuilds([]);
       setShowGarageOnly(false);
       return;
     }
 
     let active = true;
-    Promise.all([fetchGarageFavorites(idToken), fetchStudioBuilds(idToken)])
-      .then(([favIds, builds]) => {
+    fetchGarageFavorites(idToken)
+      .then((favIds) => {
         if (!active) return;
         setFavoriteIds(favIds);
-        setSavedBuilds(builds);
       })
       .catch((err) => {
         if (!active) return;
@@ -137,23 +133,18 @@ export default function App() {
     setCompareNotice(null);
   }, []);
 
-  const handleOpenInStudio = useCallback(
-    (car: CarSpec) => {
-      setStudioCar(car);
-      scrollToSection('studio');
-    },
-    [scrollToSection],
-  );
-
   const handleToggleFavorite = useCallback(
     async (car: CarSpec) => {
       setActionNotice(null);
-      let token = await getFreshToken();
-      if (!token) {
+      let token: string | null = null;
+      if (!user) {
         const signedInUser = await signIn();
         if (!signedInUser) return;
         token = await signedInUser.getIdToken();
+      } else {
+        token = await getFreshToken();
       }
+      if (!token) return;
       const currentlySaved = favoriteIds.includes(car.id);
       try {
         const updated = currentlySaved
@@ -168,57 +159,7 @@ export default function App() {
         );
       }
     },
-    [favoriteIds, getFreshToken, signIn],
-  );
-
-  const handleSaveBuild = useCallback(
-    async (payload: {
-      carId: string;
-      buildName: string;
-      paintColor: string;
-      finish: FinishType;
-      wheelStyle: WheelStyle;
-      rideHeight: number;
-    }): Promise<boolean> => {
-      setActionNotice(null);
-      let token = await getFreshToken();
-      if (!token) {
-        const signedInUser = await signIn();
-        if (!signedInUser) return false;
-        token = await signedInUser.getIdToken();
-      }
-      setSavingBuild(true);
-      try {
-        const build = await createStudioBuild(token, payload);
-        setSavedBuilds((prev) => [build, ...prev]);
-        return true;
-      } catch (err) {
-        setActionNotice(
-          err instanceof Error ? err.message : 'Unable to save studio build.',
-        );
-        return false;
-      } finally {
-        setSavingBuild(false);
-      }
-    },
-    [getFreshToken, signIn],
-  );
-
-  const handleDeleteBuild = useCallback(
-    async (buildId: number) => {
-      setActionNotice(null);
-      const token = await getFreshToken();
-      if (!token) return;
-      try {
-        await removeStudioBuild(token, buildId);
-        setSavedBuilds((prev) => prev.filter((b) => b.id !== buildId));
-      } catch (err) {
-        setActionNotice(
-          err instanceof Error ? err.message : 'Unable to delete studio build.',
-        );
-      }
-    },
-    [getFreshToken],
+    [user, favoriteIds, getFreshToken, signIn],
   );
 
   const featuredHeroCar = useMemo(
@@ -250,7 +191,7 @@ export default function App() {
               href="#catalog"
               className="hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
-              Catalog
+              Encyclopedia
             </a>
             <a
               href="#compare"
@@ -259,16 +200,16 @@ export default function App() {
               Compare ({compareCars.length}/3)
             </a>
             <a
-              href="#studio"
-              className="hover:text-white transition-colors whitespace-nowrap shrink-0"
-            >
-              3D Studio
-            </a>
-            <a
               href="#brands"
               className="hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
-              Marques
+              List
+            </a>
+            <a
+              href="#enquiry"
+              className="hover:text-white transition-colors whitespace-nowrap shrink-0"
+            >
+              Enquiry
             </a>
           </nav>
 
@@ -293,19 +234,20 @@ export default function App() {
             ) : (
               <button
                 type="button"
+                disabled={signingIn}
                 onClick={() => void signIn()}
-                className="h-9 px-3 rounded-lg bg-[#12161f] border border-white/12 text-[#d1d5df] hover:text-white hover:border-[#d6b45d]/60 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                className="h-9 px-3 rounded-lg bg-[#12161f] border border-white/12 text-[#d1d5df] hover:text-white hover:border-[#d6b45d]/60 disabled:opacity-60 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 <LogIn className="w-3.5 h-3.5 text-[#d6b45d]" aria-hidden="true" />
-                <span>Sign In</span>
+                <span>{signingIn ? 'Signing in...' : 'Sign In'}</span>
               </button>
             )}
             <button
               type="button"
-              onClick={() => scrollToSection('studio')}
+              onClick={() => scrollToSection('catalog')}
               className="px-4 py-2 rounded-lg bg-[#d6b45d] text-[#090b10] text-xs font-semibold hover:bg-[#e2c26d] transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
-              Enter 3D Studio
+              Browse Cars
             </button>
           </div>
         </div>
@@ -343,7 +285,7 @@ export default function App() {
                   Discover Your Dream Machine.
                 </h1>
                 <p className="text-base text-[#b5bbc8] leading-relaxed max-w-xl mt-5">
-                  Explore {cars.length.toLocaleString()} iconic production cars, hypercars, and electric flagships across {BRANDS.length - 1} global marques. Compare performance metrics side by side and configure paint, stance, and wheel finishes in real-time 3D.
+                  Explore {cars.length.toLocaleString()} iconic production cars, hypercars, and electric flagships across {BRANDS.length - 1} global brands in our list. Compare performance metrics side by side and save your favorite machines to your personal Garage.
                 </p>
                 <div className="flex flex-wrap items-center gap-3.5 mt-7">
                   <button
@@ -351,16 +293,16 @@ export default function App() {
                     onClick={() => scrollToSection('catalog')}
                     className="h-11 px-5 rounded-lg bg-[#d6b45d] text-[#090b10] text-sm font-semibold hover:bg-[#e2c26d] transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap"
                   >
-                    <span>Explore Catalog</span>
+                    <span>Explore Encyclopedia</span>
                     <ArrowRight className="w-4 h-4" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
-                    onClick={() => scrollToSection('studio')}
+                    onClick={() => scrollToSection('compare')}
                     className="h-11 px-5 rounded-lg bg-[#151a24] border border-white/12 text-white text-sm font-medium hover:border-[#d6b45d]/60 transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap"
                   >
-                    <Box className="w-4 h-4 text-[#d6b45d]" aria-hidden="true" />
-                    <span>Enter 3D Studio</span>
+                    <GitCompareArrows className="w-4 h-4 text-[#d6b45d]" aria-hidden="true" />
+                    <span>Compare Vehicles</span>
                   </button>
                 </div>
               </div>
@@ -420,7 +362,7 @@ export default function App() {
                   {cars.length.toLocaleString()}
                 </div>
                 <div className="text-xs text-[#a7adba] mt-0.5">
-                  Cataloged Vehicles
+                  Vehicles in Encyclopedia
                 </div>
               </div>
               <div>
@@ -441,10 +383,10 @@ export default function App() {
               </div>
               <div>
                 <div className="text-2xl font-semibold text-[#d6b45d] font-mono-tabular">
-                  Real-Time 3D
+                  3-Car Matrix
                 </div>
                 <div className="text-xs text-[#a7adba] mt-0.5">
-                  Interactive Showroom & Audio
+                  Side-by-Side Spec Comparison
                 </div>
               </div>
             </div>
@@ -471,7 +413,6 @@ export default function App() {
           compareIds={compareIds}
           onToggleCompare={handleToggleCompare}
           onOpenDetails={setDetailCar}
-          onOpenInStudio={handleOpenInStudio}
         />
 
         {/* Comparison Matrix */}
@@ -480,18 +421,6 @@ export default function App() {
           notice={compareNotice}
           onRemoveCar={handleRemoveCompare}
           onClearAll={handleClearCompare}
-          onOpenInStudio={handleOpenInStudio}
-        />
-
-        {/* 3D Customization Studio */}
-        <Studio3D
-          cars={cars}
-          selectedCar={studioCar}
-          onSelectCar={setStudioCar}
-          savedBuilds={savedBuilds}
-          savingBuild={savingBuild}
-          onSaveBuild={handleSaveBuild}
-          onDeleteBuild={handleDeleteBuild}
         />
 
         {/* Contact & Enquiry Form */}
@@ -506,22 +435,21 @@ export default function App() {
         onClose={() => setDetailCar(null)}
         onToggleCompare={handleToggleCompare}
         onToggleFavorite={(car) => void handleToggleFavorite(car)}
-        onOpenInStudio={handleOpenInStudio}
       />
+
+      {/* Sign-In Recovery Modal */}
+      <SignInModal />
 
       {/* Footer */}
       <footer className="border-t border-white/8 py-8 bg-[#090b10]">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#8e95a5]">
-          <p>AUTOVERSE © 2026 · Interactive Automobile Explorer</p>
+          <p>AUTOVERSE © 2026 · Encyclopedia of Cars</p>
           <div className="flex items-center gap-6">
             <a href="#catalog" className="hover:text-white transition-colors">
-              Catalog
+              Encyclopedia
             </a>
             <a href="#compare" className="hover:text-white transition-colors">
               Compare
-            </a>
-            <a href="#studio" className="hover:text-white transition-colors">
-              3D Studio
             </a>
             <a href="#enquiry" className="hover:text-white transition-colors">
               Enquiry

@@ -50,7 +50,7 @@ export const EnquirySection: React.FC = () => {
               Send an Enquiry
             </h2>
             <p className="text-sm text-[#a7adba] leading-relaxed mt-3 max-w-md">
-              Have a question about vehicle specifications, want to request a marque addition, or share feedback on the 3D Showroom? Send us a direct note.
+              Have a question about vehicle specifications, want to request a vehicle addition to the list, or share feedback on the Encyclopedia of Cars? Send us a direct note.
             </p>
           </div>
 

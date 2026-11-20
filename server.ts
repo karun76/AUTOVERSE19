@@ -5,12 +5,9 @@ import dotenv from 'dotenv';
 import { requireAuth, type AuthRequest } from './src/middleware/auth.ts';
 import {
   addUserFavorite,
-  createUserStudioBuild,
-  deleteUserStudioBuild,
   getAllCatalogCars,
   getOrCreateUser,
   getUserFavoriteCarIds,
-  getUserStudioBuilds,
   removeUserFavorite,
 } from './src/db/repository.ts';
 
@@ -108,99 +105,6 @@ async function startServer() {
       } catch (error) {
         const message =
           error instanceof Error ? error.message : 'Failed to remove vehicle.';
-        res.status(500).json({ error: message });
-      }
-    },
-  );
-
-  // Saved 3D studio configurations
-  app.get('/api/studio-builds', requireAuth, async (req: AuthRequest, res) => {
-    try {
-      const uid = req.user!.uid;
-      const email = req.user!.email ?? '';
-      const displayName =
-        typeof req.user!.name === 'string' ? req.user!.name : null;
-      const builds = await getUserStudioBuilds(uid, email, displayName);
-      res.json({ builds });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to load builds.';
-      res.status(500).json({ error: message });
-    }
-  });
-
-  app.post(
-    '/api/studio-builds',
-    requireAuth,
-    async (req: AuthRequest, res) => {
-      try {
-        const body = req.body ?? {};
-        const carId = typeof body.carId === 'string' ? body.carId.trim() : '';
-        const buildName =
-          typeof body.buildName === 'string' && body.buildName.trim()
-            ? body.buildName.trim().slice(0, 80)
-            : 'Custom Studio Spec';
-        const paintColor =
-          typeof body.paintColor === 'string' &&
-          /^#[0-9a-fA-F]{6}$/.test(body.paintColor)
-            ? body.paintColor
-            : '#c60022';
-        const finish = body.finish === 'matte' ? 'matte' : 'metallic';
-        const wheelStyle =
-          body.wheelStyle === 'normal' ||
-          body.wheelStyle === 'sport' ||
-          body.wheelStyle === 'luxury'
-            ? body.wheelStyle
-            : 'sport';
-        const rideHeight =
-          typeof body.rideHeight === 'number' &&
-          Number.isFinite(body.rideHeight)
-            ? Math.max(0, Math.min(100, Math.round(body.rideHeight)))
-            : 50;
-
-        if (!carId) {
-          return res.status(400).json({ error: 'Vehicle ID is required.' });
-        }
-
-        const uid = req.user!.uid;
-        const email = req.user!.email ?? '';
-        const displayName =
-          typeof req.user!.name === 'string' ? req.user!.name : null;
-        const build = await createUserStudioBuild(uid, email, displayName, {
-          carId,
-          buildName,
-          paintColor,
-          finish,
-          wheelStyle,
-          rideHeight,
-        });
-        res.status(201).json({ build });
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to save build.';
-        res.status(500).json({ error: message });
-      }
-    },
-  );
-
-  app.delete(
-    '/api/studio-builds/:id',
-    requireAuth,
-    async (req: AuthRequest, res) => {
-      try {
-        const buildId = Number(req.params.id);
-        if (!Number.isInteger(buildId) || buildId <= 0) {
-          return res.status(400).json({ error: 'Invalid build ID.' });
-        }
-        const uid = req.user!.uid;
-        const email = req.user!.email ?? '';
-        const displayName =
-          typeof req.user!.name === 'string' ? req.user!.name : null;
-        await deleteUserStudioBuild(uid, email, displayName, buildId);
-        res.json({ deletedId: buildId });
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to delete build.';
         res.status(500).json({ error: message });
       }
     },

@@ -1,32 +1,18 @@
-import { and, asc, count, desc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, like, notLike, or, sql } from 'drizzle-orm';
 import { db } from './index.ts';
-import { cars, garageFavorites, studioBuilds, users } from './schema.ts';
+import { cars, garageFavorites, users } from './schema.ts';
 import { CARS } from '../data/cars.ts';
-
-export interface StudioBuildRecord {
-  id: number;
-  carId: string;
-  buildName: string;
-  paintColor: string;
-  finish: string;
-  wheelStyle: string;
-  rideHeight: number;
-  createdAt: Date;
-}
-
-export interface CreateStudioBuildInput {
-  carId: string;
-  buildName: string;
-  paintColor: string;
-  finish: 'metallic' | 'matte';
-  wheelStyle: 'normal' | 'sport' | 'luxury';
-  rideHeight: number;
-}
 
 export async function ensureCarsSeeded(): Promise<void> {
   try {
     const [{ total }] = await db.select({ total: count() }).from(cars);
-    if (total >= CARS.length) return;
+    const stalePrice = await db
+      .select({ id: cars.id })
+      .from(cars)
+      .where(or(notLike(cars.price, '$%'), like(cars.price, 'Approx.%')))
+      .limit(1);
+
+    if (total >= CARS.length && stalePrice.length === 0) return;
 
     const rows = CARS.map((car, idx) => ({
       id: car.id,
@@ -53,7 +39,13 @@ export async function ensureCarsSeeded(): Promise<void> {
       await db
         .insert(cars)
         .values(rows.slice(i, i + CHUNK_SIZE))
-        .onConflictDoNothing();
+        .onConflictDoUpdate({
+          target: cars.id,
+          set: {
+            price: sql`excluded.price`,
+            sortOrder: sql`excluded.sort_order`,
+          },
+        });
     }
   } catch (error) {
     console.error('Database seed failed:', error);
@@ -178,100 +170,5 @@ export async function removeUserFavorite(
     throw new Error('Unable to remove vehicle from your garage.', {
       cause: error,
     });
-  }
-}
-
-export async function getUserStudioBuilds(
-  uid: string,
-  email: string,
-  displayName?: string | null,
-): Promise<StudioBuildRecord[]> {
-  try {
-    const user = await getOrCreateUser(uid, email, displayName);
-    return await db
-      .select({
-        id: studioBuilds.id,
-        carId: studioBuilds.carId,
-        buildName: studioBuilds.buildName,
-        paintColor: studioBuilds.paintColor,
-        finish: studioBuilds.finish,
-        wheelStyle: studioBuilds.wheelStyle,
-        rideHeight: studioBuilds.rideHeight,
-        createdAt: studioBuilds.createdAt,
-      })
-      .from(studioBuilds)
-      .where(eq(studioBuilds.userId, user.id))
-      .orderBy(desc(studioBuilds.createdAt));
-  } catch (error) {
-    console.error('Database query failed (getUserStudioBuilds):', error);
-    throw new Error('Unable to load saved 3D studio builds.', { cause: error });
-  }
-}
-
-export async function createUserStudioBuild(
-  uid: string,
-  email: string,
-  displayName: string | null | undefined,
-  input: CreateStudioBuildInput,
-): Promise<StudioBuildRecord> {
-  try {
-    await ensureCarsSeeded();
-    const user = await getOrCreateUser(uid, email, displayName);
-
-    const carExists = await db
-      .select({ id: cars.id })
-      .from(cars)
-      .where(eq(cars.id, input.carId))
-      .limit(1);
-
-    if (carExists.length === 0) {
-      throw new Error('Vehicle not found.');
-    }
-
-    const inserted = await db
-      .insert(studioBuilds)
-      .values({
-        userId: user.id,
-        carId: input.carId,
-        buildName: input.buildName,
-        paintColor: input.paintColor,
-        finish: input.finish,
-        wheelStyle: input.wheelStyle,
-        rideHeight: input.rideHeight,
-      })
-      .returning({
-        id: studioBuilds.id,
-        carId: studioBuilds.carId,
-        buildName: studioBuilds.buildName,
-        paintColor: studioBuilds.paintColor,
-        finish: studioBuilds.finish,
-        wheelStyle: studioBuilds.wheelStyle,
-        rideHeight: studioBuilds.rideHeight,
-        createdAt: studioBuilds.createdAt,
-      });
-
-    return inserted[0];
-  } catch (error) {
-    console.error('Database insert failed (createUserStudioBuild):', error);
-    throw new Error('Unable to save your 3D studio build.', { cause: error });
-  }
-}
-
-export async function deleteUserStudioBuild(
-  uid: string,
-  email: string,
-  displayName: string | null | undefined,
-  buildId: number,
-): Promise<void> {
-  try {
-    const user = await getOrCreateUser(uid, email, displayName);
-    await db
-      .delete(studioBuilds)
-      .where(
-        and(eq(studioBuilds.id, buildId), eq(studioBuilds.userId, user.id)),
-      );
-  } catch (error) {
-    console.error('Database delete failed (deleteUserStudioBuild):', error);
-    throw new Error('Unable to delete saved 3D build.', { cause: error });
   }
 }

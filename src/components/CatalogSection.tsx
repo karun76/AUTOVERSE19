@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Box, ArrowUpDown, Check, Plus, Bookmark } from 'lucide-react';
+import { Search, ArrowUpDown, Check, Plus, Bookmark } from 'lucide-react';
 import { BRANDS, CATEGORY_OPTIONS, type CarSpec } from '../data/cars';
 import { CarImage } from './CarImage';
 
@@ -22,7 +22,6 @@ interface CatalogSectionProps {
   compareIds: string[];
   onToggleCompare: (car: CarSpec) => void;
   onOpenDetails: (car: CarSpec) => void;
-  onOpenInStudio: (car: CarSpec) => void;
 }
 
 export const CatalogSection: React.FC<CatalogSectionProps> = ({
@@ -44,7 +43,6 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
   compareIds,
   onToggleCompare,
   onOpenDetails,
-  onOpenInStudio,
 }) => {
   const filteredCars = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -113,10 +111,10 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
             <p className="text-xs font-medium tracking-wider text-[#d6b45d] mb-2">
-              Global Vehicle Directory
+              Automobile Reference Directory
             </p>
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
-              Global Car Catalog
+              Encyclopedia of Cars
             </h2>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -305,15 +303,6 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                         fill={isFavorite ? 'currentColor' : 'none'}
                         aria-hidden="true"
                       />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onOpenInStudio(car)}
-                      title={`Load ${car.brand} ${car.model} in 3D Studio`}
-                      className="absolute top-3 right-3 px-2.5 py-1.5 rounded-md bg-[#090b10]/85 border border-white/10 text-[11px] font-medium text-[#d1d5df] hover:text-[#d6b45d] hover:border-[#d6b45d]/50 transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-                    >
-                      <Box className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>3D View</span>
                     </button>
                   </div>
 

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Box, Check, Plus, Bookmark } from 'lucide-react';
+import { X, Check, Plus, Bookmark } from 'lucide-react';
 import type { CarSpec } from '../data/cars';
 import { CarImage } from './CarImage';
 
@@ -10,7 +10,6 @@ interface CarDetailModalProps {
   onClose: () => void;
   onToggleCompare: (car: CarSpec) => void;
   onToggleFavorite: (car: CarSpec) => void;
-  onOpenInStudio: (car: CarSpec) => void;
 }
 
 export const CarDetailModal: React.FC<CarDetailModalProps> = ({
@@ -20,7 +19,6 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
   onClose,
   onToggleCompare,
   onToggleFavorite,
-  onOpenInStudio,
 }) => {
   useEffect(() => {
     if (!car) return;
@@ -42,7 +40,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
     ['Peak Torque', `${car.torque} Nm`],
     ['Top Speed', `${car.top} km/h`],
     ['0–100 km/h', car.acc],
-    ['Estimated Price', car.price],
+    ['Original Price', car.price],
   ];
 
   return (
@@ -104,19 +102,8 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
           <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-5 border-t border-white/8">
             <button
               type="button"
-              onClick={() => {
-                onOpenInStudio(car);
-                onClose();
-              }}
-              className="flex-1 h-11 px-4 rounded-lg bg-[#d6b45d] text-[#090b10] text-xs font-semibold hover:bg-[#e2c26d] transition-colors flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Box className="w-4 h-4" aria-hidden="true" />
-              <span>Customize in 3D Studio</span>
-            </button>
-            <button
-              type="button"
               onClick={() => onToggleFavorite(car)}
-              className={`h-11 px-4 rounded-lg text-xs font-medium border transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
+              className={`flex-1 h-11 px-4 rounded-lg text-xs font-medium border transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
                 isFavorite
                   ? 'bg-[#d6b45d]/15 border-[#d6b45d] text-[#d6b45d]'
                   : 'bg-[#1a202c] border-white/10 text-white hover:border-white/25'
@@ -132,7 +119,7 @@ export const CarDetailModal: React.FC<CarDetailModalProps> = ({
             <button
               type="button"
               onClick={() => onToggleCompare(car)}
-              className={`h-11 px-4 rounded-lg text-xs font-medium border transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
+              className={`flex-1 h-11 px-4 rounded-lg text-xs font-medium border transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
                 isCompared
                   ? 'bg-[#d6b45d]/15 border-[#d6b45d] text-[#d6b45d]'
                   : 'bg-[#1a202c] border-white/10 text-white hover:border-white/25'

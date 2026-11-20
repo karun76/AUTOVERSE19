@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { CarSpec } from '../data/cars';
 import { CarSilhouette } from './CarSilhouette';
 
@@ -9,6 +9,10 @@ interface CarImageProps {
 
 export const CarImage: React.FC<CarImageProps> = ({ car, className = '' }) => {
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [car.image, car.id]);
 
   if (failed || !car.image) {
     return (
