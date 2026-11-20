@@ -1,0 +1,6 @@
+{
+  "name": "AUTOVERSE",
+  "description": "Interactive global automobile catalog, performance comparator, and 3D customization studio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
